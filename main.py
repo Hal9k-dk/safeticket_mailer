@@ -7,6 +7,9 @@ from io import StringIO
 from csv import DictReader
 from pprint import pprint as pp
 
+import smtplib, ssl
+from email.mime.text import MIMEText
+
 from lib.safeticket_wrapper import SafeTicket
 from config import CONFIG
 
@@ -134,10 +137,14 @@ def main():
       print(msg)
 
     if args.send_emails:
-      smtpObj = smtplib.SMTP(CONFIG.SMTP.host, SMTP.login.port)
-      smtpObj.login(CONFIG.SMTP.username, SMTP.login.password)
-      smtpObj.sendmail(union[''], union['receivers'], msg)
-      smtp.quit()
+      context = ssl.create_default_context()
+      with smtplib.SMTP_SSL(CONFIG.SMTP.host, CONFIG.SMTP.port, context=context) as smtpObj:
+        email = MIMEText(msg)
+        email['To']      = union['to_email']
+        email['From']    = union['from_email']
+        email['Subject'] = union['subject']
+        smtpObj.login(CONFIG.SMTP.username, CONFIG.SMTP.password)
+        smtpObj.sendmail(union['from_email'], union['to_email'], email.as_string())
 
  
 

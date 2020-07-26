@@ -6,10 +6,10 @@ class CONFIG:
   username = 'someone' # Normally, this is an email address
   password = 'secret'
 
-  # SMTP (mail) server config
+  # SMTP (mail) server config (currently, only SSL is supported)
   class SMTP:
     host = 'example.com'
-    post = 587 # '25, 465, 587'
+    port = 587 # '25, 465, 587'
     username = 'someone'
     password = 'secret'
 
