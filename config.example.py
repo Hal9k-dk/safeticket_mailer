@@ -17,9 +17,9 @@ class CONFIG:
   # Select the event
   event_name = 'the name of the event' # Example: "SummerHack 2020"
 
-  # List fields for all the ticket with the --ticket-fields argument
-  # Select fields with the id of the union member
-  member_fields = ['Union1 Medlems ID', 'Union2 medlems ID', 'Union3 Medlems ID']
+  # List fields from the ticket to include in the mail when listing ticket soldt.
+  # The --ticket-fields argument will list all possible fields.
+  ticket_fields = ['Navn', 'Email', 'Addresse', 'Addresse2']
 
   # Create a list of all the unions that needs and email and what it should contain
   unions = [{
@@ -37,6 +37,8 @@ class CONFIG:
     'extra_text': 'Phone Nr. 8888 8888 ',
     # The of the email-address of the sender of the email
     'from_email': 'Some Event Person <sep@event.com>',
+    # List extra fields to add to the mail from the ticket, check ticket_fields for more info.
+    'ticket_fields_extra': ['Union Medlems ID'],
     # Names of all the tickets types there should be send to the union.
     # Use the --tickets arguments to list all the tickets type.
     # You can also use the --ticket-and-member-ids argument to se that

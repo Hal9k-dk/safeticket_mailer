@@ -10,6 +10,9 @@ from pprint import pprint as pp
 import smtplib, ssl
 from email.mime.text import MIMEText
 
+#from pyexcel_ods3 import save_data
+from tabulate import tabulate
+
 from lib.safeticket_wrapper import SafeTicket
 from config import CONFIG
 
@@ -29,8 +32,6 @@ def args_parser():
       default=False, help='Print all the possible fields existion for the tickets')
   parser.add_argument('--ticket-stats', dest='ticket_stats', action='store_true',
       default=False, help='Print ticket types and there stats for the event')
-  parser.add_argument('--ticket-and-member-ids', dest='ticket_and_member_ids', action='store_true',
-      default=False, help='Print ticket and the id of the members there bought them for the event')
   parser.add_argument('--show-emails', dest='show_emails', action='store_true',
       default=False, help='Display the email there is going to be sendt')
   parser.add_argument('--send-emails', dest='send_emails', action='store_true',
@@ -82,19 +83,12 @@ def main():
 
   # Contains all the ticket types and how many there have been sold of them
   ticket_types = {}
-  # Contains all the ticket types there the member ID fields there have been filled, including the ID there was entered
-  ticket_unions = {}
 
   # Doing counting of the tickets
   for row in _csv_reader:
-    _count = ticket_types.get(row['Billettype'], 0)
-    ticket_types[row['Billettype']] = _count + 1
-
-    for member_tag in CONFIG.member_fields:
-      if row.get(member_tag, '') != '':
-        _member_ids = ticket_unions.get(row['Billettype'], [])
-        _member_ids.append(row[member_tag])
-        ticket_unions[row['Billettype']] = _member_ids
+    l = ticket_types.get(row['Billettype'], [])
+    l.append(row)
+    ticket_types[row['Billettype']] = l
 
   if args.tickets or args.debug:
     print('\n============(All The Tickets Types)============')
@@ -104,22 +98,26 @@ def main():
     pp(sorted(_csv_reader.fieldnames))
   if args.ticket_stats or args.debug:
     print('\n================(Ticket Stats)=================')
-    pp(ticket_types)
-  if args.ticket_and_member_ids or args.debug:
-    print('\n============(Ticket and Member IDs)============')
-    pp(ticket_unions)
+    pp([{k: len(v)} for k, v in ticket_types.items()])
 
 
   for union in CONFIG.unions:
+    fields = CONFIG.ticket_fields + union['ticket_fields_extra']
     ticket_info_text = []
     for ticket_type_name in union['ticket_type_names']:
-      union_ids = ticket_unions.get(ticket_type_name)
-      if union_ids:
-        ticket_info_text.append('{}:\n{}\nAntal billet soldt: {}'.format(
-            ticket_type_name,
-            '\n'.join(sorted([' - {}'.format(ID) for ID in union_ids])),
-            len(union_ids),
-        ))
+      data = []
+      try:
+        for ticket in ticket_types[ticket_type_name]:
+          data.append([ticket[field] for field in fields])
+      except KeyError as e:
+        print("Error: The fields {} doesn't exist, check the variable 'ticket_fields' in the config.py file".format(e))
+        sys.exit(1)
+
+      ticket_info_text.append('{}:\n{}\nAntal billet soldt: {}'.format(
+          ticket_type_name,
+          tabulate(data, headers=fields),
+          len(ticket_types[ticket_type_name]),
+      ))
 
     msg = CONFIG.email_template.format(
        to_name=union['to_name'],
@@ -145,7 +143,6 @@ def main():
         email['Subject'] = union['subject']
         smtpObj.login(CONFIG.SMTP.username, CONFIG.SMTP.password)
         smtpObj.sendmail(union['from_email'], union['to_email'], email.as_string())
-
  
 
 if __name__ == '__main__':
