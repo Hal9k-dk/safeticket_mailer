@@ -9,6 +9,8 @@ from pprint import pprint as pp
 
 import smtplib, ssl
 from email.mime.text import MIMEText
+from email.utils import parseaddr
+from email.header import Header
 
 #from pyexcel_ods3 import save_data
 from tabulate import tabulate
@@ -44,8 +46,15 @@ def args_parser():
 
   return parser.parse_args()
 
+
+### This is need because there is a bug in MIMEText
+def encode_email_address_name(email_address: str) -> str:
+  (name, address) = parseaddr(email_address)
+  return '{} <{}>'.format(Header(name).encode('utf-8'), address)
+
+
 def main():
-  args = args_parser()  
+  args = args_parser()
 
   safeticket = SafeTicket(
       CONFIG.organization,
@@ -69,8 +78,16 @@ def main():
     print('There was no event for the name "{}", try the --events args.'.format(CONFIG.event_name),
         file=sys.stderr)
     sys.exit(2)
+
   # Filter a the ticket types IDs into a list
-  ticket_ids = [ticket['id'] for ticket in tickets['data']['tickets']]
+  ticket_ids = []
+
+  # Contains all the ticket types and how many there have been sold of them
+  ticket_types = {}
+  for ticket in tickets['data']['tickets']:
+    ticket_ids.append(ticket['id'])
+    ticket_types[ticket['name']] = []
+
   # Export ticket stats from the event into a CSV file
   csv_content = safeticket.export_tickets_stats(event_ids[0], ticket_ids)
 
@@ -81,18 +98,15 @@ def main():
       delimiter=';',
       quotechar='"')
 
-  # Contains all the ticket types and how many there have been sold of them
-  ticket_types = {}
-
   # Doing counting of the tickets
   for row in _csv_reader:
-    l = ticket_types.get(row['Billettype'], [])
+    l = ticket_types[row['Billettype']]
     l.append(row)
     ticket_types[row['Billettype']] = l
 
   if args.tickets or args.debug:
     print('\n============(All The Tickets Types)============')
-    pp(sorted([ticket['name'] for ticket in tickets['data']['tickets']]))
+    pp(sorted(ticket_types.keys()))
   if args.ticket_fields or args.debug:
     print('\n===(All The Possible Fields of The Tickets)====')
     pp(sorted(_csv_reader.fieldnames))
@@ -105,19 +119,20 @@ def main():
     fields = CONFIG.ticket_fields + union['ticket_fields_extra']
     ticket_info_text = []
     for ticket_type_name in union['ticket_type_names']:
-      data = []
       try:
-        for ticket in ticket_types[ticket_type_name]:
-          data.append([ticket[field] for field in fields])
+        if ticket_types[ticket_type_name]:
+          data = []
+          for ticket in ticket_types[ticket_type_name]:
+            data.append([ticket[field] for field in fields])
+
+          ticket_info_text.append('{}:\n{}\nAntal billet solgt: {}'.format(
+              ticket_type_name,
+              tabulate(data, headers=fields),
+              len(ticket_types[ticket_type_name]),
+          ))
       except KeyError as e:
         print("Error: The fields {} doesn't exist, check the variable 'ticket_fields' in the config.py file".format(e))
         sys.exit(1)
-
-      ticket_info_text.append('{}:\n{}\nAntal billet soldt: {}'.format(
-          ticket_type_name,
-          tabulate(data, headers=fields),
-          len(ticket_types[ticket_type_name]),
-      ))
 
     msg = CONFIG.email_template.format(
        to_name=union['to_name'],
@@ -129,6 +144,8 @@ def main():
     if args.show_emails or args.debug:
       print('\n============(Mail - {})============'.format(union['name']))
       print('TO:      {}'.format(union['to_email']))
+      if union.get('cc_email', None):
+        print('CC:      {}'.format(union['cc_email']))
       print('FROM:    {}'.format(union['from_email']))
       print('SUBJECT: {}'.format(union['subject']))
       print('\n---------------------------')
@@ -138,12 +155,19 @@ def main():
       context = ssl.create_default_context()
       with smtplib.SMTP_SSL(CONFIG.SMTP.host, CONFIG.SMTP.port, context=context) as smtpObj:
         email = MIMEText(msg)
-        email['To']      = union['to_email']
-        email['From']    = union['from_email']
+        email['To']      = encode_email_address_name(union['to_email'])
+        if union.get('cc_email', None):
+          email['CC']    = encode_email_address_name(union['cc_email'])
+        email['From']    = encode_email_address_name(union['from_email'])
         email['Subject'] = union['subject']
+
         smtpObj.login(CONFIG.SMTP.username, CONFIG.SMTP.password)
-        smtpObj.sendmail(union['from_email'], union['to_email'], email.as_string())
- 
+        # Make sure we only get the address and not the name
+        recivers = [parseaddr(union['to_email'])[1]]
+        if union.get('cc_email', None):
+          recivers.append([parseaddr(union['cc_email'])[1]])
+        smtpObj.sendmail(union['from_email'], recivers, email.as_string())
+
 
 if __name__ == '__main__':
   main()

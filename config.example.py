@@ -26,16 +26,18 @@ class CONFIG:
     # Name of the Union
     'name': 'Union1',
     # Subject of The Email
-    'subject': 'Ticket soldt so far',
-    # The of the name of the reciever in the Email Template
+    'subject': 'Ticket solgt so far',
+    # The name of the reciever in the Email Template
     'to_name':  'Union Person',
-    # The of the email-address of the reciever of the email
+    # The email-address of the reciever of the email
     'to_email': 'Some Persen <sp@union.org>',
-    # The of the name of the sender in the Email Template
+    # The email-address to be CC of the email, can the None to disable
+    'cc_email': None,
+    # The name of the sender in the Email Template
     'from_name':  'Event Persen',
     # Extra text added efter the name of the sender. E.g. a phone no.
     'extra_text': 'Phone Nr. 8888 8888 ',
-    # The of the email-address of the sender of the email
+    # The email-address of the sender of the email
     'from_email': 'Some Event Person <sep@event.com>',
     # List extra fields to add to the mail from the ticket, check ticket_fields for more info.
     'ticket_fields_extra': ['Union Medlems ID'],
@@ -58,10 +60,12 @@ class CONFIG:
       "Hermed billetter med tilskud fra {union_name}. "
       "Skulle der være solgt {union_name}-billetter til personer der viser sig ikke at være medlem, så må I lige sige til.\n"
       "\n"
-      "-= Billet Info =-\n"
+      "---=== Billet Info ===---\n"
       "{ticket_info_text}\n"
       "\n"
       "Mvh. {from_name}\n"
-      "{extra_text}")
+      "{extra_text}\n"
+      "\n"
+      "PS Hvis der mangler information eller hvis I ønsker på en anden må så skrive, så vil jeg gøre mit bedste for at efter komme det")
 
 
