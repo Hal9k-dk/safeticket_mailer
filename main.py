@@ -5,6 +5,7 @@ import sys
 import argparse
 from io import StringIO
 from csv import DictReader
+from datetime import datetime, timedelta, date
 from pprint import pprint as pp
 
 import smtplib, ssl
@@ -65,19 +66,22 @@ def main():
 
   # Look through all the events and find the one we need
   events = safeticket.get_events()
-  event_ids = [event['id'] for event in events['data']['events']
-                if event['name'] == CONFIG.event_name]
 
   if args.events or args.debug:
     pp(events['data']['events'])
 
-  # Get all the data about ticket types from the selected `event`
-  if len(event_ids) == 1:
-    tickets = safeticket.get_event_tickets(event_ids[0])
+  _event = [event for event in events['data']['events']
+                if event['name'] == CONFIG.event_name]
+  if len(_event) == 1:
+    event = _event[0]
   else:
     print('There was no event for the name "{}", try the --events args.'.format(CONFIG.event_name),
         file=sys.stderr)
     sys.exit(2)
+
+
+  # Get all the data about ticket types from the selected `event`
+  tickets = safeticket.get_event_tickets(event['id'])
 
   # Filter a the ticket types IDs into a list
   ticket_ids = []
@@ -89,7 +93,7 @@ def main():
     ticket_types[ticket['name']] = []
 
   # Export ticket stats from the event into a CSV file
-  csv_content = safeticket.export_tickets_stats(event_ids[0], ticket_ids)
+  csv_content = safeticket.export_tickets_stats(event['id'], ticket_ids)
 
   # Parse the CSV file
   _csv_reader = DictReader(
@@ -131,7 +135,7 @@ def main():
               len(ticket_types[ticket_type_name]),
           ))
       except KeyError as e:
-        print("Error: The fields {} doesn't exist, check the variable 'ticket_fields' in the config.py file".format(e))
+        print("ERROR: The fields {} doesn't exist, check the variable 'ticket_fields' in the config.py file".format(e))
         sys.exit(1)
 
     msg = CONFIG.email_template.format(
@@ -152,21 +156,27 @@ def main():
       print(msg)
 
     if args.send_emails:
-      context = ssl.create_default_context()
-      with smtplib.SMTP_SSL(CONFIG.SMTP.host, CONFIG.SMTP.port, context=context) as smtpObj:
-        email = MIMEText(msg)
-        email['To']      = encode_email_address_name(union['to_email'])
-        if union.get('cc_email', None):
-          email['CC']    = encode_email_address_name(union['cc_email'])
-        email['From']    = encode_email_address_name(union['from_email'])
-        email['Subject'] = union['subject']
+      if datetime.strptime(event['settledate'], "%d.%m.%Y").date() + timedelta(days=CONFIG.extra_days_to_send_emails) >= date.today():
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL(CONFIG.SMTP.host, CONFIG.SMTP.port, context=context) as smtpObj:
+          email = MIMEText(msg)
+          email['To']      = encode_email_address_name(union['to_email'])
+          if union.get('cc_email', None):
+            email['CC']    = encode_email_address_name(union['cc_email'])
+          email['From']    = encode_email_address_name(union['from_email'])
+          email['Subject'] = union['subject']
 
-        smtpObj.login(CONFIG.SMTP.username, CONFIG.SMTP.password)
-        # Make sure we only get the address and not the name
-        recivers = [parseaddr(union['to_email'])[1]]
-        if union.get('cc_email', None):
-          recivers.append([parseaddr(union['cc_email'])[1]])
-        smtpObj.sendmail(union['from_email'], recivers, email.as_string())
+          smtpObj.login(CONFIG.SMTP.username, CONFIG.SMTP.password)
+          # Make sure we only get the address and not the name
+          recivers = [parseaddr(union['to_email'])[1]]
+          if union.get('cc_email', None):
+            recivers.append([parseaddr(union['cc_email'])[1]])
+          smtpObj.sendmail(union['from_email'], recivers, email.as_string())
+      else:
+        print('No emails was send to {} because of it being {} since the "settledate" - {}'.format(
+          union['name'],
+          CONFIG.extra_days_to_send_emails,
+          event['settledate']))
 
 
 if __name__ == '__main__':

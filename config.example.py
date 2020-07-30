@@ -13,6 +13,11 @@ class CONFIG:
     username = 'someone'
     password = 'secret'
 
+  # This variable tells the SafeTicket mailer to now send emails X amount of
+  # days after the event, this is based on the 'settledate' information.
+  # You can find this information but using the --events argument
+  extra_days_to_send_emails = 5
+
   # List events with the --events argument
   # Select the event
   event_name = 'the name of the event' # Example: "SummerHack 2020"
