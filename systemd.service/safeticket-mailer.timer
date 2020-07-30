@@ -2,7 +2,7 @@
 Description=The schedule for when SafeTicket mails are send
 
 [Timer]
-OnCalendar=Mon 2020-7,8-* 07:00:00
+OnCalendar=Mon *-*-* 07:00:00
 Persistent=true
 
 [Install]
