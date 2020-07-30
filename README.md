@@ -1,7 +1,25 @@
 [TOC]
 
 # Intro
-This script/program is made to extract infomation about ticket sells from safeticket.dk and send it in an email to the IT Unions there are specials deal for there menbers.
+This script/program is made to extract information about ticket sells from safeticket.dk and send it in an email to the IT Unions there are specials deal for there members.  
+
+Here are a list of the scripts arguments. Most of them are there to help configure it.  
+**Note:** This script will not send emails before the `--send-emails` argument is used.
+```
+usage: main.py [-h] [--debug] [--events] [--tickets] [--ticket-fields] [--ticket-stats] [--show-emails] [--send-emails]
+
+SafeTicket Mailer
+
+optional arguments:
+  -h, --help       show this help message and exit
+  --debug          Print a lot of info
+  --events         Print all events
+  --tickets        Print all the types of ticket of an event
+  --ticket-fields  Print all the possible fields existion for the tickets
+  --ticket-stats   Print ticket types and there stats for the event
+  --show-emails    Display the email there is going to be sendt
+  --send-emails    This will send the emails to the unions
+```
 
 # Requirements
 [requirements.txt](requirements.txt)
@@ -11,7 +29,7 @@ The script is meant to be run user a service user, so if you don't have one, cre
 
 Now enter user service user `sudo -u USER -i`.
 ```
-# Go to home folder
+# Go to the home folder
 cd
 
 # Git clone this project
@@ -25,7 +43,10 @@ bin/install_symbolic_links_to_services.sh
 ```
 
 # Configuration
-Copy the `config.example.py` to `config.py` and change the variables in the file
+Copy the `config.example.py` to `config.py` and change the variables in the file.
+There are a lot of comment/description for all the variables in the config-file that it shouldn't be a problem mail it work.
+
+Check out the [config.example.py](config.example.py) file.
 
 # Start the systemd tiemr (scheduler for the service)
 Check the `systemd.service/safeticket-mailer.timer` to figure out when it is running
