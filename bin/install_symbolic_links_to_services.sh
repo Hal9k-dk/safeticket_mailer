@@ -3,9 +3,10 @@
 
 set -eu
 
-mkdir -p ~/.config/systemd/user
+FOLDER="~/.config/systemd/user"
+mkdir -p "${FOLDER}"
 
-for file in ~/.config/systemd/user/*.{service,timer}; do
+for file in "${FOLDER}"/*.{service,timer}; do
   if [ -L "${file}" ]; then
     if [ ! -e "${file}" ]; then
       rm "${_file}"
@@ -14,8 +15,7 @@ for file in ~/.config/systemd/user/*.{service,timer}; do
 done
 
 for file in ${PWD}/systemd.service/*.{service,timer}; do
-  if [ -f "${file}" ] && [ ! -e ~/.config/systemd/user/$(basename "${file}") ]; then
-    ln -s "${file}" ~/.config/systemd/user/$(basename "${file}")
+  if [ -f "${file}" ] && [ ! -e "${FOLDER}"/$(basename "${file}") ]; then
+    ln -s "${file}" "${FOLDER}"/$(basename "${file}")
   fi
 done
-
