@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # ex: set tabstop=8 softtabstop=0 expandtab shiftwidth=2 smarttab:
 
+if [ ! -d .git ]; then
+  echo The working directory have to the root directory of the git project
+  exit 1
+fi
+
 set -eu
 
 FOLDER="~/.config/systemd/user"
