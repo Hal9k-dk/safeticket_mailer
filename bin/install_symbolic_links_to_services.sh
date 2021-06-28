@@ -8,7 +8,7 @@ fi
 
 set -eu
 
-FOLDER="~/.config/systemd/user"
+FOLDER="${HOME}/.config/systemd/user"
 mkdir -p "${FOLDER}"
 
 for file in "${FOLDER}"/*.{service,timer}; do
