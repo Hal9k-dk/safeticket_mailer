@@ -39,6 +39,10 @@ def args_parser():
       default=False, help='Display the email there is going to be sendt')
   parser.add_argument('--send-emails', dest='send_emails', action='store_true',
       default=False, help='This will send the emails to the unions')
+  parser.add_argument('--past', dest='past', action='store_true',
+      default=False, help='Find events from the past')
+  parser.add_argument('--auto-include-past', dest='auto_include_past', action='store_true',
+      default=False, help='Find events from the past')
 
   # Print --help message if now arguments
   if len(sys.argv)==1:
@@ -65,7 +69,11 @@ def main():
   safeticket.login()
 
   # Look through all the events and find the one we need
-  events = safeticket.get_events()
+  events = safeticket.get_events(past=args.past)
+
+  if args.auto_include_past is True and args.past is False:
+    _past_events = safeticket.get_events(past=True)
+    events['data']['events'] += _past_events['data']['events']
 
   if args.events or args.debug:
     pp(events['data']['events'])

@@ -46,12 +46,13 @@ class SafeTicket:
     else:
       return False
 
-  def get_events(self) -> dict:
+  def get_events(self, past: bool = False) -> dict:
     req = self._session.get(
         url='https://osaa.safeticket.dk/admin/api/event',
         data={
           'operation': 'list',
-          'view': 'financial'
+          'view': 'financial',
+          'past': int(past),
         },
         headers={'X-Requested-With': 'XMLHttpRequest'})
     
