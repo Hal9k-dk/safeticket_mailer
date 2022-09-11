@@ -5,161 +5,160 @@ import unittest
 import requests
 import atexit
 
+
 class LoginError(BaseException):
     def __init__(self):
         super().__init__("status_code is '403', "
-          "this normally happens because you aren't logged in.")
+                         "this normally happens because you aren't logged in.")
         self.errors = 403
 
 
 class SafeTicket:
-  _organization = None
-  _username     = None
-  _password     = None
-  _session      = None
+    _organization = None
+    _username = None
+    _password = None
+    _session = None
 
-  def __init__(self, organization: str, username: str, password: str):
-    self._organization = organization
-    self._username     = username
-    self._password     = password
-    self._session      = requests.Session()
-    atexit.register(self._cleanup)
+    def __init__(self, organization: str, username: str, password: str):
+        self._organization = organization
+        self._username = username
+        self._password = password
+        self._session = requests.Session()
+        atexit.register(self._cleanup)
 
-  def _cleanup(self):
-    self._session.close()
+    def _cleanup(self):
+        self._session.close()
 
-  def login(self) -> bool:
-    "Return: True, if successful and False if failed"
+    def login(self) -> bool:
+        """Return: True, if successful and False if failed"""
 
-    req = self._session.post(
-        url='https://{}.safeticket.dk/admin/login'.format(self._organization),
-        data={
-          'conturl': '/admin/',
-          'email': self._username,
-          'password': self._password
-        })
+        req = self._session.post(
+            url='https://{}.safeticket.dk/admin/login'.format(self._organization),
+            data={
+                'conturl': '/admin/',
+                'email': self._username,
+                'password': self._password
+            })
 
-    # The page always return 200, but if there is a redirect (302) in the history
-    # the login was a success, if not it failed
-    if req.status_code == 200 and req.history and req.history[0].status_code == 302:
-      return True
-    else:
-      return False
+        # The page always return 200, but if there is a redirect (302) in the history
+        # the login was a success, if not it failed
+        if req.status_code == 200 and req.history and req.history[0].status_code == 302:
+            return True
+        else:
+            return False
 
-  def get_events(self, past: bool = False) -> dict:
-    req = self._session.get(
-        url='https://osaa.safeticket.dk/admin/api/event',
-        data={
-          'operation': 'list',
-          'view': 'financial',
-          'past': int(past),
-        },
-        headers={'X-Requested-With': 'XMLHttpRequest'})
-    
-    if req.status_code == 403:
-      raise LoginError()
+    def get_events(self, past: bool = False) -> dict:
+        req = self._session.get(
+            url='https://{}.safeticket.dk/admin/api/event'.format(self._organization),
+            params={
+                'operation': 'list',
+                'view': 'financial',
+                'past': int(past),
+            },
+            headers={'X-Requested-With': 'XMLHttpRequest'})
 
-    return req.json()
+        if req.status_code == 403:
+            raise LoginError()
 
-  def get_event_tickets(self, event_id: int) -> dict:
-    req = self._session.get(
-        url='https://{}.safeticket.dk/admin/api/financial'.format(self._organization),
-        data={
-          'operation': 'eventexport',
-          'id': event_id
-        },
-        headers={'X-Requested-With': 'XMLHttpRequest'})
+        return req.json()
 
-    if req.status_code == 403:
-      raise LoginError()
+    def get_event_tickets(self, event_id: int) -> dict:
+        req = self._session.get(
+            url='https://{}.safeticket.dk/admin/api/financial'.format(self._organization),
+            data={
+                'operation': 'eventexport',
+                'id': event_id
+            },
+            headers={'X-Requested-With': 'XMLHttpRequest'})
 
-    if req.status_code == 500:
-      raise IndexError("Error: status_code is '500', "
-          "this normally happens because of an invalid event_id")
-    return req.json()
-    
-  def export_tickets_stats(self, event_id: int, ticket_ids: list) -> str:
-    _data = {
-      'submitted': 1,
-      'id': event_id,
-      'csv': 'Start+eksport+(CSV)'
-    }
+        if req.status_code == 403:
+            raise LoginError()
 
-    for ticket_id in ticket_ids:
-      _data['ticket{}'.format(ticket_id)] = 1
+        if req.status_code == 500:
+            raise IndexError("Error: status_code is '500', "
+                             "this normally happens because of an invalid event_id")
+        return req.json()
 
-    req = self._session.post(
-        url='https://{}.safeticket.dk/admin/eventexportcsv'.format(self._organization),
-        data=_data)
+    def export_tickets_stats(self, event_id: int, ticket_ids: list) -> str:
+        _data = {
+            'submitted': 1,
+            'id': event_id,
+            'csv': 'Start+eksport+(CSV)'
+        }
 
-    if req.status_code == 403:
-      raise LoginError()
+        for ticket_id in ticket_ids:
+            _data['ticket{}'.format(ticket_id)] = 1
 
-    if req.status_code == 500:
-      raise IndexError("Error: status_code is '500', "
-          "this normally happens because of an invalid event_id")
+        req = self._session.post(
+            url='https://{}.safeticket.dk/admin/eventexportcsv'.format(self._organization),
+            data=_data)
 
-    return req.text
-    
+        if req.status_code == 403:
+            raise LoginError()
+
+        if req.status_code == 500:
+            raise IndexError("Error: status_code is '500', "
+                             "this normally happens because of an invalid event_id")
+
+        return req.text
+
 
 class TestStringMethods(unittest.TestCase):
-  def setUp(self):
-    self._safeticket = SafeTicket(
-        CONFIG.organization,
-        CONFIG.username,
-        CONFIG.password)
+    def setUp(self):
+        self._safeticket = SafeTicket(
+            CONFIG.organization,
+            CONFIG.username,
+            CONFIG.password)
 
-  def test_05_login__failed(self):
-    safeticket = SafeTicket(
-        CONFIG.organization,
-        "tester_username",
-        "Tester_password_1212")
+    def test_05_login__failed(self):
+        safeticket = SafeTicket(
+            CONFIG.organization,
+            "tester_username",
+            "Tester_password_1212")
 
-    self.assertEqual(safeticket.login(), False)
+        self.assertEqual(safeticket.login(), False)
 
-  def test_10_login__success(self):
-    self.assertEqual(self._safeticket.login(), True)
+    def test_10_login__success(self):
+        self.assertEqual(self._safeticket.login(), True)
 
-  def test_20_get_events(self):
-    self._safeticket.login()
+    def test_20_get_events(self):
+        self._safeticket.login()
 
-    r = self._safeticket.get_events()
-    self.assertEqual(r['status'], 'OK')
-    self.assertTrue('data' in r.keys())
+        r = self._safeticket.get_events()
+        self.assertEqual(r['status'], 'OK')
+        self.assertTrue('data' in r.keys())
 
-  def test_30_get_event_tickets(self):
-    self._safeticket.login()
+    def test_30_get_event_tickets(self):
+        self._safeticket.login()
 
-    r = self._safeticket.get_events()
-    event_ids = [e['id'] for e in r['data']['events']]
+        r = self._safeticket.get_events()
+        event_ids = [e['id'] for e in r['data']['events']]
 
-    e = self._safeticket.get_event_tickets(event_ids[0])
-    self.assertEqual(e['status'], 'OK')
-    self.assertTrue('data' in e.keys())
+        e = self._safeticket.get_event_tickets(event_ids[0])
+        self.assertEqual(e['status'], 'OK')
+        self.assertTrue('data' in e.keys())
 
-  def test_31_get_event_tickets__no_login(self):
-    self.assertRaises(LoginError, self._safeticket.get_event_tickets, 403)
+    def test_31_get_event_tickets__no_login(self):
+        self.assertRaises(LoginError, self._safeticket.get_event_tickets, 403)
 
-  def test_32_get_event_tickets__invalid_event(self):
-    self._safeticket.login()
-    self.assertRaises(IndexError, self._safeticket.get_event_tickets, 404)
+    def test_32_get_event_tickets__invalid_event(self):
+        self._safeticket.login()
+        self.assertRaises(IndexError, self._safeticket.get_event_tickets, 404)
 
-  def test_40_export_tickets_stats(self):
-    self._safeticket.login()
+    def test_40_export_tickets_stats(self):
+        self._safeticket.login()
 
-    r = self._safeticket.get_events()
-    event_ids = [e['id'] for e in r['data']['events']]
+        r = self._safeticket.get_events()
+        event_ids = [e['id'] for e in r['data']['events']]
 
-    e = self._safeticket.get_event_tickets(event_ids[0])
+        e = self._safeticket.get_event_tickets(event_ids[0])
 
-    ticket_ids = [t['id'] for t in e['data']['tickets']]
-    self.assertTrue('";"' in self._safeticket.export_tickets_stats(event_ids[0], ticket_ids))
+        ticket_ids = [t['id'] for t in e['data']['tickets']]
+        self.assertTrue('";"' in self._safeticket.export_tickets_stats(event_ids[0], ticket_ids))
 
-  def test_41_export_tickets_stats__no_login(self):
-    self.assertRaises(LoginError, self._safeticket.get_event_tickets, 403)
+    def test_41_export_tickets_stats__no_login(self):
+        self.assertRaises(LoginError, self._safeticket.get_event_tickets, 403)
 
-  def test_42_export_tickets_stats__invalid_event(self):
-    self._safeticket.login()
-    self.assertRaises(IndexError, self._safeticket.get_event_tickets, 404)
-
-
+    def test_42_export_tickets_stats__invalid_event(self):
+        self._safeticket.login()
+        self.assertRaises(IndexError, self._safeticket.get_event_tickets, 404)
