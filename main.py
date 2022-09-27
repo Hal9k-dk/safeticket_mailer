@@ -69,7 +69,9 @@ def main():
         CONFIG.username,
         CONFIG.password)
 
-    safe_ticket.login()
+    if safe_ticket.login() is False:
+        print("Something when wrong with login")
+        exit(1)
 
     # Look through all the events and find the one we need
     events = safe_ticket.get_events(past=args.past)

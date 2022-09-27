@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 # ex: set tabstop=8 softtabstop=0 expandtab shiftwidth=2 smarttab:
-
+import pickle
 import unittest
+from datetime import datetime, timedelta
+from pathlib import Path
+
 import requests
 import atexit
 
@@ -31,18 +34,30 @@ class SafeTicket:
 
     def login(self) -> bool:
         """Return: True, if successful and False if failed"""
+        cookie_path = Path("/tmp/.safeticket_mailer/cookie.jar")
 
-        req = self._session.post(
-            url='https://{}.safeticket.dk/admin/login'.format(self._organization),
-            data={
-                'conturl': '/admin/',
-                'email': self._username,
-                'password': self._password
-            })
+        dt = datetime.now() - timedelta(minutes=10)
+        if cookie_path.is_file() and cookie_path.stat().st_mtime > dt.timestamp():
+            with open(cookie_path, "rb") as f:
+                self._session.cookies.update(pickle.load(f))
+            return True
+
+        else:
+            req = self._session.post(
+                url='https://{}.safeticket.dk/admin/login'.format(self._organization),
+                data={
+                    'conturl': '/admin/',
+                    'email': self._username,
+                    'password': self._password
+                })
 
         # The page always return 200, but if there is a redirect (302) in the history
         # the login was a success, if not it failed
         if req.status_code == 200 and req.history and req.history[0].status_code == 302:
+            cookie_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+            with open(cookie_path, "wb") as f:
+                pickle.dump(self._session.cookies, f)
+
             return True
         else:
             return False
