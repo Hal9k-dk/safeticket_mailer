@@ -17,7 +17,10 @@ from typing import List
 from tabulate import tabulate
 
 from lib.safeticket_wrapper import SafeTicket
-from config import CONFIG
+from config import Config
+
+
+CONFIG = Config()
 
 
 def args_parser():
@@ -57,6 +60,8 @@ def encode_email_address_name(email_address: str) -> str:
 
 
 def main():
+    global CONFIG
+
     args = args_parser()
 
     safe_ticket = SafeTicket(
@@ -88,7 +93,7 @@ def main():
     # Get all the data about ticket types from the selected `event`
     tickets = safe_ticket.get_event_tickets(event['id'])
 
-    # Filter a the ticket types IDs into a list
+    # Filter the ticket types IDs into a list
     ticket_ids = []
 
     # Contains all the ticket types and how many there have been sold of them
@@ -124,10 +129,10 @@ def main():
         print('\n================(Ticket Stats)=================')
         pp([{k: len(v)} for k, v in ticket_types.items()])
 
-    for union in CONFIG.unions:
-        fields = CONFIG.ticket_fields + union['ticket_fields_extra']
+    for index, union in enumerate(CONFIG.unions):
+        fields = CONFIG.ticket_fields + union.ticket_fields_extra
         ticket_info_text = []
-        for ticket_type_name in union['ticket_type_names']:
+        for ticket_type_name in union.ticket_type_names:
             try:
                 if ticket_types[ticket_type_name]:
                     data = []
@@ -146,19 +151,19 @@ def main():
                 sys.exit(1)
 
         msg = CONFIG.email_template.format(
-            to_name=union['to_name'],
-            from_name=union['from_name'],
-            union_name=union['name'],
+            to_name=union.to_name,
+            from_name=union.from_name,
+            union_name=union.name,
             ticket_info_text='\n\n'.join(ticket_info_text),
-            extra_text=union['extra_text'])
+            extra_text=union.extra_text)
 
         if args.show_emails or args.debug:
-            print('\n============(Mail - {})============'.format(union['name']))
-            print('TO:      {}'.format(union['to_email']))
+            print('\n============(Mail - {})============'.format(union.name))
+            print('TO:      {}'.format(union.to_email))
             if union.get('cc_email', None):
-                print('CC:      {}'.format(union['cc_email']))
-            print('FROM:    {}'.format(union['from_email']))
-            print('SUBJECT: {}'.format(union['subject']))
+                print('CC:      {}'.format(union.cc_email))
+            print('FROM:    {}'.format(union.from_email))
+            print('SUBJECT: {}'.format(union.subject))
             print('\n---------------------------')
             print(msg)
 
@@ -168,21 +173,21 @@ def main():
                 context = ssl.create_default_context()
                 with smtplib.SMTP_SSL(CONFIG.SMTP.host, CONFIG.SMTP.port, context=context) as smtpObj:
                     email = MIMEText(msg)
-                    email['To'] = encode_email_address_name(union['to_email'])
+                    email['To'] = encode_email_address_name(union.to_email)
                     if union.get('cc_email', None):
-                        email['CC'] = encode_email_address_name(union['cc_email'])
-                    email['From'] = encode_email_address_name(union['from_email'])
-                    email['Subject'] = union['subject']
+                        email['CC'] = encode_email_address_name(union.cc_email)
+                    email['From'] = encode_email_address_name(union.from_email)
+                    email['Subject'] = union.subject
 
                     smtpObj.login(CONFIG.SMTP.username, CONFIG.SMTP.password)
                     # Make sure we only get the address and not the name
-                    recivers = [parseaddr(union['to_email'])[1]]
+                    recivers = [parseaddr(union.to_email)[1]]
                     if union.get('cc_email', None):
-                        recivers.append([parseaddr(union['cc_email'])[1]])
-                    smtpObj.sendmail(union['from_email'], recivers, email.as_string())
+                        recivers.append([parseaddr(union.cc_email)[1]])
+                    smtpObj.sendmail(union.from_email, recivers, email.as_string())
             else:
                 print('No emails was send to {} because of it being {} since the "settledate" - {}'.format(
-                    union['name'],
+                    union.name,
                     CONFIG.extra_days_to_send_emails,
                     event['settledate']))
 

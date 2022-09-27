@@ -105,14 +105,16 @@ class SafeTicket:
 
 class TestStringMethods(unittest.TestCase):
     def setUp(self):
+        from config import Config
         self._safeticket = SafeTicket(
-            CONFIG.organization,
-            CONFIG.username,
-            CONFIG.password)
+            Config().organization,
+            Config().username,
+            Config().password)
 
     def test_05_login__failed(self):
+        from config import Config
         safeticket = SafeTicket(
-            CONFIG.organization,
+            Config().organization,
             "tester_username",
             "Tester_password_1212")
 
