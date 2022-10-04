@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{{title}}</title>
+</head>
+<style>
+    tr {
+        white-space: nowrap;
+    }
+
+    th {
+        border-collapse: collapse;
+        white-space: nowrap;
+    }
+
+    #header {
+        border: 1px solid black;
+        width: 100%;
+    }
+
+    #header tr :first-child {
+        text-align: left;
+    }
+
+    #header tr {
+        text-align: center;
+    }
+
+    #header tr :last-child {
+        text-align: right;
+    }
+
+    #sender {
+        float: left;
+    }
+
+    #receiver {
+        float: right;
+    }
+
+    #sender_and_receiver {
+        width: 100%;
+    }
+
+    #sender_and_receiver table tr :first-child {
+        text-align: left;
+        padding-right: 10px;
+    }
+
+    #sender_and_receiver table tr :last-child {
+        text-align: right;
+    }
+
+    #sender_and_receiver table tr:nth-child(even) {
+        background-color: hsl(120, 0%, 85%);
+    }
+
+    #order table {
+        width: 100%;
+    }
+
+    #order table tr :not(:first-child):not(:last-child) {
+        width: 100%;
+        padding-left: 1em;
+    }
+
+    #order table tr th {
+        text-align: left;
+        border-bottom: 2px solid black;
+        background-color: hsl(120, 0%, 70%);
+    }
+
+    #order table tbody tr:nth-child(odd):not(:last-child) {
+        background-color: hsl(120, 0%, 85%);
+    }
+
+    #order table tr td:first-child {
+        text-align: right;
+    }
+
+    #order table tr td {
+        text-align: left;
+    }
+
+    #order table tr td:last-child {
+        padding-left: 15px;
+        text-align: right;
+    }
+
+    #order table #order_sum td {
+        border-top: 2px solid black;
+        text-align: right;
+        font-weight: bold;
+    }
+
+    #payment>div {
+        padding: 10px;
+        border: 1px solid black;
+    }
+
+    #payment table tr {
+        border-bottom: 2px solid black;
+        text-align: left;
+    }
+
+    #payment table tr th {
+        border-bottom: 2px solid black;
+        text-align: left;
+    }
+
+    #payment table tr td:first-child {
+        text-align: left;
+        padding-right: 10px;
+    }
+
+    #payment table tr td:last-child {
+        text-align: right;
+    }
+</style>
+
+<!-- Workaround to get emojis to work: Begin -->
+<style>
+    img.emoji {
+        height: 1em;
+        width: 1em;
+        margin: 0 .05em 0 .1em;
+        vertical-align: -0.1em;
+    }
+</style>
+<script src="https://twemoji.maxcdn.com/2/twemoji.min.js"></script>
+<script>window.onload = function () { twemoji.parse(document.body); }</script>
+<!-- Workaround to get emojis to work: End -->
+
+<body>
+    <div id="title">
+        <h1>{{title}}</h1>
+    </div>
+    <div id="content">
+        <div>
+            <div>
+                <table id="header">
+                    <colgroup>
+                        <col span="3">
+                    </colgroup>
+                    <tbody>
+                        <tr>
+                            <td>Kontakt: <a href="mailto: {{sender_email}}?subject={{ title }} - {{ receiver_name }}">{{sender_email}}</a></td>
+                            <td>Dato: {{date}}</td>
+                            <td>Faktura nr.: {{invoice_no}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <table id="sender_and_receiver">
+                    <colgroup>
+                        <col span="3">
+                    </colgroup>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <table id="sender" cellspacing="0">
+                                    <colgroup>
+                                        <col span="2">
+                                    </colgroup>
+                                    <tr>
+                                        <td>Fra:</td>
+                                        <td>{{sender_name}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Adresse:</td>
+                                        <td>{{from_address}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Post nr.:</td>
+                                        <td>{{from_zip_code}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>By:</td>
+                                        <td>{{from_city}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>CVR nr.:</td>
+                                        <td>{{sender_cvr_no}}</td>
+                                    </tr>
+                                </table>
+                            </td>
+                            <td></td>
+                            <td>
+                                <table id="receiver" cellspacing="0">
+                                    <colgroup>
+                                        <col span="2">
+                                    </colgroup>
+                                    <tr>
+                                        <td>Til:</td>
+                                        <td>{{receiver_name}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Adresse:</td>
+                                        <td>{{to_address}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Post nr.:</td>
+                                        <td>{{to_zip_code}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>By:</td>
+                                        <td>{{to_city}}</td>
+                                    </tr>
+                                    {% if receiver_cvr_no %}
+                                    <tr>
+                                        <td>CVR nr.:</td>
+                                        <td>{{ receiver_cvr_no }}</td>
+                                    </tr>
+                                    {% endif %}
+                                </table>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div id="order">
+            <h3>Faktura</h3>
+            <table cellspacing="0">
+                <colgroup>
+                    <col span="1">
+                    <col span="1">
+                    <col span="1">
+                </colgroup>
+                <tbody>
+                    <tr>
+                        <th>Antal</th>
+                        <th>Beskrivelse</th>
+                        <th>Beløb</th>
+                    </tr>
+                    {% for order in orders %}
+                    <tr>
+                        <td>{{ order.count }} stk.</td>
+                        <td>{{ order.name }}</td>
+                        <td>{{ order.price_formatted }} {{currency}}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if additional_sponsorship %}
+                    <tr>
+                        <td>1 stk.</td>
+                        <td>Sponsorat</td>
+                        <td>{{ additional_sponsorship }} {{currency}}</td>
+                    </tr>
+                    {% endif %}
+                    <tr id="order_sum">
+                        <td colspan="2">
+                            Total:
+                        </td>
+                        <td colspan="1">
+                            {{ total_sum }} {{currency}}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div></div>
+        <div id="payment">
+            <h3>Betaling</h3>
+            <div>
+                <div>Beløbet bedes indbetalt på følgende konto med oplysning af fakturanummer.</div>
+                <br>
+                <table>
+                    <colgroup>
+                        <col span="2">
+                    </colgroup>
+                    <tbody>
+                        <tr>
+                            <th colspan="2">Indbetalingskonto</th>
+                        </tr>
+                        <tr>
+                            <td>Reg. nr.:</td>
+                            <td>{{registration_no}}</td>
+                        </tr>
+                        <tr>
+                            <td>Konto nr.:</td>
+                            <td>{{account_no}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <br>
+                <div>Betalingsbetingelse: 14 dage fra fakturadato, tak 😁</div>
+            </div>
+        </div>
+    </div>
+    <div id="footnotes" hidden>
+        <hr>
+    </div>
+    <div id="footer" hidden>
+        <div id="footer-text">
+            Last updated
+            2022-10-01 01:45:18 CEST
+        </div>
+    </div>
+</body>
+
+</html>

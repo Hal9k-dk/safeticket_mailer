@@ -4,9 +4,95 @@ import pickle
 import unittest
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Dict, Any, List
 
 import requests
 import atexit
+
+
+class Event:
+    created_email: str
+    created_name: str
+    event_ts: int
+    id: int
+    name: str
+    settle_date: str
+    settled: int
+    tickets_on_offer: int
+    tickets_remaining: int
+    tickets_sold: str
+    turnover_today: str
+    turnover_total: str
+    user_permissions: Dict[str, Any]
+
+    def __init__(self, _json: Dict[str, Any]):
+        self.created_email = _json.pop("created_email")
+        self.created_name = _json.pop("created_name")
+        self.event_ts = _json.pop("eventts")
+        self.id = _json.pop("id")
+        self.name = _json.pop("name")
+        self.settle_date = _json.pop("settledate")
+        self.settled = _json.pop("settled")
+        self.tickets_on_offer = _json.pop("tickets_on_offer")
+        self.tickets_remaining = _json.pop("tickets_remaining")
+        self.tickets_sold = _json.pop("tickets_sold")
+        self.turnover_today = _json.pop("turnover_today")
+        self.turnover_total = _json.pop("turnover_total")
+        self.user_permissions = _json.pop("user_permissions")
+
+
+class Events:
+    events: List[Event]
+    has_unsettled_events_without_valid_bank_account: int
+    settled_events: int
+    sold: int
+    today: str
+    total: str
+
+    def __init__(self, _json: Dict[str, Any]):
+        self.events = [Event(event) for event in _json.pop("events")]
+        self.has_unsettled_events_without_valid_bank_account = _json.pop(
+            "has_unsettled_events_without_valid_bankaccount")
+        self.settled_events = _json.pop("settled_events")
+        self.sold = _json.pop("sold")
+        self.today = _json.pop("today")
+        self.total = _json.pop("total")
+
+
+class EventsResult:
+    data: Events
+    status: str
+
+    def __init__(self, _json: Dict[str, Any]):
+        self.data = Events(_json.pop("data"))
+        self.status = _json.pop("status")
+
+
+class Ticket:
+    name: str
+    id: int
+
+    def __init__(self, _json: Dict[str, Any]):
+        self.name = _json.pop("name")
+        self.id = _json.pop("id")
+
+
+class Tickets:
+    name: str
+    tickets: List[Ticket]
+
+    def __init__(self, _json: Dict[str, Any]):
+        self.name = _json.pop("name")
+        self.tickets = [Ticket(ticket) for ticket in _json.pop("tickets")]
+
+
+class TicketsResult:
+    data: Tickets
+    status: str
+
+    def __init__(self, _json: Dict[str, Any]):
+        self.data = Tickets(_json.pop("data"))
+        self.status = _json.pop("status")
 
 
 class LoginError(BaseException):
@@ -62,7 +148,7 @@ class SafeTicket:
         else:
             return False
 
-    def get_events(self, past: bool = False) -> dict:
+    def get_events(self, past: bool = False) -> EventsResult:
         req = self._session.get(
             url='https://{}.safeticket.dk/admin/api/event'.format(self._organization),
             params={
@@ -75,9 +161,9 @@ class SafeTicket:
         if req.status_code == 403:
             raise LoginError()
 
-        return req.json()
+        return EventsResult(req.json())
 
-    def get_event_tickets(self, event_id: int) -> dict:
+    def get_event_tickets(self, event_id: int) -> TicketsResult:
         req = self._session.get(
             url='https://{}.safeticket.dk/admin/api/financial'.format(self._organization),
             data={
@@ -92,7 +178,7 @@ class SafeTicket:
         if req.status_code == 500:
             raise IndexError("Error: status_code is '500', "
                              "this normally happens because of an invalid event_id")
-        return req.json()
+        return TicketsResult(req.json())
 
     def export_tickets_stats(self, event_id: int, ticket_ids: list) -> str:
         _data = {
@@ -142,18 +228,18 @@ class TestStringMethods(unittest.TestCase):
         self._safeticket.login()
 
         r = self._safeticket.get_events()
-        self.assertEqual(r['status'], 'OK')
-        self.assertTrue('data' in r.keys())
+        self.assertEqual(r.status, 'OK')
+        self.assertTrue(r.data)
 
     def test_30_get_event_tickets(self):
         self._safeticket.login()
 
         r = self._safeticket.get_events()
-        event_ids = [e['id'] for e in r['data']['events']]
+        event_ids = [e.id for e in r.data.events]
 
         e = self._safeticket.get_event_tickets(event_ids[0])
-        self.assertEqual(e['status'], 'OK')
-        self.assertTrue('data' in e.keys())
+        self.assertEqual(e.status, 'OK')
+        self.assertTrue(e.data)
 
     def test_31_get_event_tickets__no_login(self):
         self.assertRaises(LoginError, self._safeticket.get_event_tickets, 403)
@@ -166,11 +252,11 @@ class TestStringMethods(unittest.TestCase):
         self._safeticket.login()
 
         r = self._safeticket.get_events()
-        event_ids = [e['id'] for e in r['data']['events']]
+        event_ids = [e.id for e in r.data.events]
 
         e = self._safeticket.get_event_tickets(event_ids[0])
 
-        ticket_ids = [t['id'] for t in e['data']['tickets']]
+        ticket_ids = [t.id for t in e.data.tickets]
         self.assertTrue('";"' in self._safeticket.export_tickets_stats(event_ids[0], ticket_ids))
 
     def test_41_export_tickets_stats__no_login(self):
