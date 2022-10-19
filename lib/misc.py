@@ -190,7 +190,7 @@ def send_email(
         email.attach(MIMEText(msg))
         email['To'] = encode_email_address_name(union.to_email)
         if union.cc_email:
-            email['CC'] = ', '.join([encode_email_address_name(cc_email) for cc_email in cc_emails])
+            email['CC'] = ', '.join([encode_email_address_name(cc_email) for cc_email in cc_emails if cc_email])
         email['From'] = encode_email_address_name(union.from_email)
         email['Subject'] = union.subject
 
@@ -208,14 +208,13 @@ def send_email(
         receivers = [parseaddr(union.to_email)[1]]
 
         if cc_emails:
-            receivers.extend([parseaddr(cc_email)[1] for cc_email in cc_emails])
+            receivers.extend([parseaddr(cc_email)[1] for cc_email in cc_emails if cc_email])
 
         if bcc_emails:
-            receivers.extend([parseaddr(bcc_email)[1] for bcc_email in bcc_emails])
+            receivers.extend([parseaddr(bcc_email)[1] for bcc_email in bcc_emails if bcc_emails])
 
-        if overwrite_email_receiver:
-            smtpObj.sendmail(
-                from_addr=union.from_email,
-                to_addrs=[overwrite_email_receiver] if overwrite_email_receiver else receivers,
-                msg=email.as_string()
-            )
+        smtpObj.sendmail(
+            from_addr=union.from_email,
+            to_addrs=[overwrite_email_receiver] if overwrite_email_receiver else receivers,
+            msg=email.as_string()
+        )
