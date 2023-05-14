@@ -11,9 +11,14 @@ from email.utils import parseaddr
 from io import BytesIO
 from typing import List, Dict, Any, NamedTuple
 
-from odf import opendocument
-from odf.table import Table, TableRow, TableCell, TableColumn
-from odf.style import Style, TableColumnProperties, TableCellProperties, ParagraphProperties
+try:
+    from odf import opendocument
+    from odf.table import Table, TableRow, TableCell, TableColumn
+    from odf.style import Style, TableColumnProperties, TableCellProperties, ParagraphProperties
+except ModuleNotFoundError:
+    print("You need to install odfpy to use this module: python3 -m pip install odfpy")
+    sys.exit(1)
+
 
 from config import Union, Config
 
