@@ -17,7 +17,7 @@ TEMPLATE = Path(__file__).parent.joinpath("template.html").read_text()
 BIN_HTML_TO_PDF = "wkhtmltopdf"
 if shutil.which(BIN_HTML_TO_PDF) is None:
     print(f"The program `{BIN_HTML_TO_PDF}` localed in the paths from the environment variable PATH "
-          f"(os.environ.get('PATH')). You can install `{BIN_HTML_TO_PDF}` with: sudo pacman -Sy wkhtmltopdf")
+          f"(os.environ.get('PATH')). You can install `{BIN_HTML_TO_PDF}` with: pikaur -Sy --noconfirm wkhtmltopdf")
     sys.exit(1)
 
 
