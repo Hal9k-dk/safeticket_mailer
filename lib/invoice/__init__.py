@@ -1,5 +1,7 @@
 import html
 import os
+import shutil
+import sys
 from datetime import datetime
 from pathlib import Path
 from subprocess import Popen, PIPE
@@ -9,6 +11,14 @@ import locale
 from jinja2 import Template, StrictUndefined
 
 TEMPLATE = Path(__file__).parent.joinpath("template.html").read_text()
+
+
+# Check if wkhtmltopdf is installed
+BIN_HTML_TO_PDF = "wkhtmltopdf"
+if shutil.which(BIN_HTML_TO_PDF) is None:
+    print(f"The program `{BIN_HTML_TO_PDF}` localed in the paths from the environment variable PATH "
+          f"(os.environ.get('PATH')). You can install `{BIN_HTML_TO_PDF}` with: sudo pacman -Sy wkhtmltopdf")
+    sys.exit(1)
 
 
 class TicketInfo(NamedTuple):
