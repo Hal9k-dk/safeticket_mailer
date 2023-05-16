@@ -38,13 +38,17 @@ def main():
     var_event_run_folder_path = var_event_folder_path.joinpath("progress_status")
     var_event_run_folder_path.mkdir(parents=True, exist_ok=True)
 
+    sent_invoice_mail_path = var_event_run_folder_path.joinpath("sent-invoice-mail.json")
+    if not sent_invoice_mail_path.is_file():
+        sent_invoice_mail_path.write_text(json.dumps([]))
+
     sent_last_status_mail_path = var_event_run_folder_path.joinpath("sent-last-status-mail.json")
     if not sent_last_status_mail_path.is_file():
         sent_last_status_mail_path.write_text(json.dumps([]))
 
-    sent_invoice_mail_path = var_event_run_folder_path.joinpath("sent-invoice-mail.json")
-    if not sent_invoice_mail_path.is_file():
-        sent_invoice_mail_path.write_text(json.dumps([]))
+    sent_status_mail_path = var_event_run_folder_path.joinpath("sent-status-mail.json")
+    if not sent_status_mail_path.is_file():
+        sent_status_mail_path.write_text(json.dumps({}))
 
     # Look through all the events and find the one we need
     events = safe_ticket.get_events(past=args.past)
@@ -210,9 +214,13 @@ def main():
                     send_last_status_update.append(union.name)
                     sent_last_status_mail_path.write_text(json.dumps(send_last_status_update))
             else:
+                sent_status_update = json.loads(sent_status_mail_path.read_text())
                 send_email(msg=msg_status, union=union, cc_emails=[union.cc_email],
                            bcc_emails=[], attachment=memory_file_status,
                            config=CONFIG, overwrite_email_receiver=args.overwrite_email_receiver)
+                sent_status_update.setdefault(union.name, [])
+                sent_status_update[union.name].append(datetime.utcnow().isoformat())
+                sent_status_mail_path.write_text(json.dumps(sent_status_update))
 
         if args.send_invoice:
             args.generate_invoice = '/tmp/safe_ticket'
