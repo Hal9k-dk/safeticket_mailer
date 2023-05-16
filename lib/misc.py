@@ -153,7 +153,7 @@ def create_spreadsheet_ticket_data(union: Union, ticket_types: TicketTypesType, 
     doc.write(data)
     data.seek(0)
 
-    return MemoryFile(filename="tickets sold.ods", data=data.read())
+    return MemoryFile(filename="tickets-sold.ods", data=data.read())
 
 
 def show_email(msg: str, union: Union, subject: str, cc_emails: List[str],
