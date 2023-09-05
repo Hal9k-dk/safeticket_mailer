@@ -206,7 +206,7 @@ def main():
 
                 send_last_status_update: List[str] = json.loads(sent_last_status_mail_path.read_text())
                 if union.name in send_last_status_update:
-                    print(f'The last status email was already sent to {union.name}')
+                    print(f'============(The last status email was already sent to {union.name})============')
                 else:
                     send_email(msg=msg_status, union=union, cc_emails=[union.cc_email],
                                bcc_emails=[union.cc_email], attachment=memory_file_status,
