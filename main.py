@@ -136,7 +136,7 @@ def main():
                 manual_ticket_data = {**yaml.safe_load(f), **default_attributes}
 
             if manual_ticket_data["Billettype"] in ticket_types:
-                manual_ticket_data["Billetnummer"] = manual_ticket.resolve().__str__()
+                manual_ticket_data["Billetnummer"] = manual_ticket.name
                 ticket_types[manual_ticket_data["Billettype"]].append(manual_ticket_data)
             else:
                 print(f"The ticket type (Billettype) is wrong in the ticket: {manual_ticket}")
