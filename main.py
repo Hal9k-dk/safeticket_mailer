@@ -189,38 +189,38 @@ def main():
                 print("============(Mail - {})============".format(union.name))
                 print(f"Info: No status email was created for the union: {union.name}")
                 print(f"Reason: There are not set any ticket (ticket_type_names) in the config file for the union")
-                continue
 
-            show_email(msg=msg_status, union=union,
-                       subject=union.invoice_subject, cc_emails=[union.cc_email],
-                       attachment=memory_file_status)
+            else:
+                show_email(msg=msg_status, union=union,
+                           subject=union.invoice_subject, cc_emails=[union.cc_email],
+                           attachment=memory_file_status)
 
         if args.send_emails:
             if not union.ticket_type_names:
                 print(f"No status email was sent to {union.name}, "
                       f"because there are not set any ticket (ticket_type_names) in the config file for the union")
-                continue
 
-            if datetime.strptime(event.settle_date, "%d.%m.%Y").date() + timedelta(
-                    days=Config.send_last_status_mail_days_after_event) <= date.today():
-
-                send_last_status_update: List[str] = json.loads(sent_last_status_mail_path.read_text())
-                if union.name in send_last_status_update:
-                    print(f'============(The last status email was already sent to {union.name})============')
-                else:
-                    send_email(msg=msg_status, union=union, cc_emails=[union.cc_email],
-                               bcc_emails=[union.cc_email], attachment=memory_file_status,
-                               config=CONFIG, overwrite_email_receiver=args.overwrite_email_receiver)
-                    send_last_status_update.append(union.name)
-                    sent_last_status_mail_path.write_text(json.dumps(send_last_status_update, indent=4))
             else:
-                sent_status_update = json.loads(sent_status_mail_path.read_text())
-                send_email(msg=msg_status, union=union, cc_emails=[union.cc_email],
-                           bcc_emails=[], attachment=memory_file_status,
-                           config=CONFIG, overwrite_email_receiver=args.overwrite_email_receiver)
-                sent_status_update.setdefault(union.name, [])
-                sent_status_update[union.name].append(datetime.utcnow().isoformat())
-                sent_status_mail_path.write_text(json.dumps(sent_status_update, indent=4))
+                if datetime.strptime(event.settle_date, "%d.%m.%Y").date() + timedelta(
+                        days=Config.send_last_status_mail_days_after_event) <= date.today():
+
+                    send_last_status_update: List[str] = json.loads(sent_last_status_mail_path.read_text())
+                    if union.name in send_last_status_update:
+                        print(f'============(The last status email was already sent to {union.name})============')
+                    else:
+                        send_email(msg=msg_status, union=union, cc_emails=[union.cc_email],
+                                   bcc_emails=[union.cc_email], attachment=memory_file_status,
+                                   config=CONFIG, overwrite_email_receiver=args.overwrite_email_receiver)
+                        send_last_status_update.append(union.name)
+                        sent_last_status_mail_path.write_text(json.dumps(send_last_status_update, indent=4))
+                else:
+                    sent_status_update = json.loads(sent_status_mail_path.read_text())
+                    send_email(msg=msg_status, union=union, cc_emails=[union.cc_email],
+                               bcc_emails=[], attachment=memory_file_status,
+                               config=CONFIG, overwrite_email_receiver=args.overwrite_email_receiver)
+                    sent_status_update.setdefault(union.name, [])
+                    sent_status_update[union.name].append(datetime.utcnow().isoformat())
+                    sent_status_mail_path.write_text(json.dumps(sent_status_update, indent=4))
 
         if args.send_invoice:
             args.generate_invoice = '/tmp/safe_ticket'
