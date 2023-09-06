@@ -10,7 +10,9 @@ import locale
 
 from jinja2 import Template, StrictUndefined
 
-TEMPLATE = Path(__file__).parent.joinpath("template.html").read_text()
+CURRENT_DIR = Path(__file__).parent
+TWEMOJI_JS_FILE_PATH = CURRENT_DIR.joinpath("twemoji/twemoji.js")
+TEMPLATE_CONTENT = CURRENT_DIR.joinpath("template.html").read_text()
 
 
 # Check if wkhtmltopdf is installed
@@ -34,7 +36,7 @@ class Order(NamedTuple):
 
 
 class Invoice:
-    _template: TEMPLATE
+    _template: TEMPLATE_CONTENT
 
     title: str
     invoice_no: int
@@ -62,7 +64,7 @@ class Invoice:
                  receiver_name: str, receiver_cvr_no: Optional[str], to_address: str, to_zip_code: str, to_city: str,
                  registration_no: int, account_no: int):
         self._template = Template(
-            source=TEMPLATE,
+            source=TEMPLATE_CONTENT,
         )
         self._template.environment.undefined = StrictUndefined
 
@@ -114,6 +116,7 @@ class Invoice:
 
         html_text = self._template.render(
             date=dt.date().__str__(),
+            twemoji_js_file_path=TWEMOJI_JS_FILE_PATH.__str__(),
 
             title=f"Faktura: {self.title}",
             invoice_no='{}{}{}'.format(self.invoice_no_prefix, dt.year, self.invoice_no),
@@ -140,8 +143,11 @@ class Invoice:
             total_sum=locale.format_string('%.2f', total_sum, grouping=True),
         )
 
+        with open(pdf_output_file.parent.joinpath(f"{pdf_output_file.stem}.html"), "w") as f:
+            f.write(html_text)
+
         if pdf_output_file.parent.exists() and os.access(pdf_output_file.parent, os.W_OK):
-            pid = Popen(['wkhtmltopdf', '--encoding', 'UTF-8', '--title', self.title,
+            pid = Popen(['wkhtmltopdf', '--enable-local-file-access', '--encoding', 'UTF-8', '--title', self.title,
                          '-', pdf_output_file.__str__()],
                         stdin=PIPE, stderr=PIPE, stdout=PIPE)
             stdout, stderr = pid.communicate(input=html_text.encode())

@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>{{title}}</title>
+    <title>{{ title }}</title>
 </head>
 <style>
     tr {
@@ -129,13 +129,13 @@
         vertical-align: -0.1em;
     }
 </style>
-<script src="https://twemoji.maxcdn.com/2/twemoji.min.js"></script>
+<script src="{{ twemoji_js_file_path }}"></script>
 <script>window.onload = function () { twemoji.parse(document.body); }</script>
 <!-- Workaround to get emojis to work: End -->
 
 <body>
     <div id="title">
-        <h1>{{title}}</h1>
+        <h1>{{ title }}</h1>
     </div>
     <div id="content">
         <div>
@@ -146,9 +146,9 @@
                     </colgroup>
                     <tbody>
                         <tr>
-                            <td>Kontakt: <a href="mailto: {{sender_email}}?subject={{ title }} - {{ receiver_name }}">{{sender_email}}</a></td>
-                            <td>Dato: {{date}}</td>
-                            <td>Faktura nr.: {{invoice_no}}</td>
+                            <td>Kontakt: <a href="mailto: {{ sender_email }}?subject={{ title }} - {{ receiver_name }}">{{ sender_email }}</a></td>
+                            <td>Dato: {{ date }}</td>
+                            <td>Faktura nr.: {{ invoice_no }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -165,23 +165,23 @@
                                     </colgroup>
                                     <tr>
                                         <td>Fra:</td>
-                                        <td>{{sender_name}}</td>
+                                        <td>{{ sender_name }}</td>
                                     </tr>
                                     <tr>
                                         <td>Adresse:</td>
-                                        <td>{{from_address}}</td>
+                                        <td>{{ from_address }}</td>
                                     </tr>
                                     <tr>
                                         <td>Post nr.:</td>
-                                        <td>{{from_zip_code}}</td>
+                                        <td>{{ from_zip_code }}</td>
                                     </tr>
                                     <tr>
                                         <td>By:</td>
-                                        <td>{{from_city}}</td>
+                                        <td>{{ from_city }}</td>
                                     </tr>
                                     <tr>
                                         <td>CVR nr.:</td>
-                                        <td>{{sender_cvr_no}}</td>
+                                        <td>{{ sender_cvr_no }}</td>
                                     </tr>
                                 </table>
                             </td>
@@ -193,19 +193,19 @@
                                     </colgroup>
                                     <tr>
                                         <td>Til:</td>
-                                        <td>{{receiver_name}}</td>
+                                        <td>{{ receiver_name }}</td>
                                     </tr>
                                     <tr>
                                         <td>Adresse:</td>
-                                        <td>{{to_address}}</td>
+                                        <td>{{ to_address }}</td>
                                     </tr>
                                     <tr>
                                         <td>Post nr.:</td>
-                                        <td>{{to_zip_code}}</td>
+                                        <td>{{ to_zip_code }}</td>
                                     </tr>
                                     <tr>
                                         <td>By:</td>
-                                        <td>{{to_city}}</td>
+                                        <td>{{ to_city }}</td>
                                     </tr>
                                     {% if receiver_cvr_no %}
                                     <tr>
@@ -238,14 +238,14 @@
                     <tr>
                         <td>{{ order.count }} stk.</td>
                         <td>{{ order.name }}</td>
-                        <td>{{ order.price_formatted }} {{currency}}</td>
+                        <td>{{ order.price_formatted }} {{ currency }}</td>
                     </tr>
                     {% endfor %}
                     {% if additional_sponsorship %}
                     <tr>
                         <td>1 stk.</td>
                         <td>Sponsorat</td>
-                        <td>{{ additional_sponsorship }} {{currency}}</td>
+                        <td>{{ additional_sponsorship }} {{ currency }}</td>
                     </tr>
                     {% endif %}
                     <tr id="order_sum">
@@ -253,7 +253,7 @@
                             Total:
                         </td>
                         <td colspan="1">
-                            {{ total_sum }} {{currency}}
+                            {{ total_sum }} {{ currency }}
                         </td>
                     </tr>
                 </tbody>
@@ -275,11 +275,11 @@
                         </tr>
                         <tr>
                             <td>Reg. nr.:</td>
-                            <td>{{registration_no}}</td>
+                            <td>{{ registration_no }}</td>
                         </tr>
                         <tr>
                             <td>Konto nr.:</td>
-                            <td>{{account_no}}</td>
+                            <td>{{ account_no }}</td>
                         </tr>
                     </tbody>
                 </table>
