@@ -114,9 +114,15 @@ class Invoice:
                 price_formatted=locale.format_string('%.2f', sum_of_tickets, grouping=True),
             ))
 
+        twemoji_js_file_path = pdf_output_file.parent.joinpath("twemoji.js")
+        twemoji_js_content = TWEMOJI_JS_FILE_PATH.read_text().replace(
+            "%%%TWEMOJI_JS_CONTENT%%%", TWEMOJI_JS_FILE_PATH.parent.__str__())
+        with open(twemoji_js_file_path, "w") as f:
+            f.write(twemoji_js_content)
+
         html_text = self._template.render(
             date=dt.date().__str__(),
-            twemoji_js_file_path=TWEMOJI_JS_FILE_PATH.__str__(),
+            twemoji_js_file_path=twemoji_js_file_path,
 
             title=f"Faktura: {self.title}",
             invoice_no='{}{}{}'.format(self.invoice_no_prefix, dt.year, self.invoice_no),
