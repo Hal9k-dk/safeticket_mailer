@@ -300,13 +300,31 @@ def main():
 
                 sent_invoice_mail: List[str] = json.loads(sent_invoice_mail_path.read_text())
                 if union.name in sent_invoice_mail:
-                    print(f'The invoice email was already sent to {union.name}')
+                    print(f'============(The invoice email was already sent to {union.name})============')
                 else:
-                    send_email(msg=msg_invoice, union=union, cc_emails=[union.cc_email, CONFIG.invoice_cc_email],
-                               bcc_emails=[union.from_email], attachment=memory_file_invoice,
-                               config=CONFIG, overwrite_email_receiver=args.overwrite_email_receiver)
+                    send_email(
+                        msg=msg_invoice,
+                        union=union,
+                        cc_emails=[
+                            union.cc_email,
+                            CONFIG.invoice_cc_email
+                        ],
+                        bcc_emails=[
+                            union.from_email
+                        ],
+                        attachment=memory_file_invoice,
+                        config=CONFIG,
+                        overwrite_email_receiver=args.overwrite_email_receiver,
+                    )
+                    print(f'============(The invoice email was already sent to {union.name})============')
                     sent_invoice_mail.append(union.name)
                     sent_invoice_mail_path.write_text(json.dumps(sent_invoice_mail, indent=4))
+
+            else:
+                data_there_invoices_can_be_sent = datetime.strptime(event.settle_date, "%d.%m.%Y").date() + timedelta(
+                    days=Config.send_invoice_mail_days_after_event)
+                print(f'============(The invoice email was not sent to {union.name}, '
+                      f'because it is not the {data_there_invoices_can_be_sent} or after that date)============')
 
 
 if __name__ == '__main__':
