@@ -111,7 +111,7 @@ def create_spreadsheet_grouped_by_ticket_type_data(union, ticket_types: TicketTy
     for header_index, ticket_type_name in enumerate(union.ticket_type_names):
         tickets = ticket_types[ticket_type_name]
 
-        if ticket_type:
+        if tickets:
             row_ticket_name = TableRow()
 
             style_name = f"{table_all.getAttribute('stylename')}|header={header_index + 1}"
@@ -297,8 +297,8 @@ def create_spreadsheet_grouped_by_buyer_data(union, ticket_types: TicketTypesTyp
     return MemoryFile(filename="tickets-sold_grouped-by-buyer.ods", data=data.read())
 
 
-def show_email(msg: str, union: Union, subject: str, cc_emails: List[str],
-               attachment: MemoryFile = None):
+def show_email(msg: str, union, subject: str, cc_emails: List[str],
+               attachments: List[MemoryFile] = None):
     cc_emails = cc_emails if cc_emails else []
 
     print('\n============(Mail - {})============'.format(union.name))
@@ -308,8 +308,9 @@ def show_email(msg: str, union: Union, subject: str, cc_emails: List[str],
             print('CC:         {}'.format(cc_email))
     print('FROM:       {}'.format(union.from_email))
     print('SUBJECT:    {}'.format(subject))
-    if attachment:
-        print('Attachment: {}'.format(attachment.filename))
+    if attachments:
+        for attachment in attachments:
+            print('Attachment: {}'.format(attachment.filename))
     print('\n---------------------------')
     print(msg)
 
@@ -322,11 +323,11 @@ def encode_email_address_name(email_address: str) -> str:
 
 def send_email(
         msg: str,
-        union: Union,
+        union,
         cc_emails: List[str],
         bcc_emails: List[str],
-        config: Config,
-        attachment: MemoryFile = None,
+        config,
+        attachments: List[MemoryFile] = None,
         overwrite_email_receiver: str = None,
 ):
     context = ssl.create_default_context()
@@ -335,26 +336,36 @@ def send_email(
         email = MIMEMultipart()
         email.attach(MIMEText(msg))
         email['To'] = encode_email_address_name(union.to_email)
+
         if union.cc_email:
-            email['CC'] = ', '.join([encode_email_address_name(cc_email) for cc_email in cc_emails if cc_email])
+            union_cc_email = [union.cc_email]
+        else:
+            union_cc_email = []
+        merged_cc_emails = list(set(union_cc_email + cc_emails))
+
+        if merged_cc_emails:
+            email['CC'] = ', '.join([encode_email_address_name(cc_email)
+                                     for cc_email in merged_cc_emails
+                                     if cc_email])
         email['From'] = encode_email_address_name(union.from_email)
         email['Subject'] = union.subject
 
-        if attachment:
-            _type, _encoding = mimetypes.guess_type(url=attachment.filename)
-            email.attach(MIMEApplication(
-                _data=attachment.data,
-                _subtype="octet-stream" if _type is None else _type.split("/")[-1],
-                name=attachment.filename,
-            ))
+        if attachments:
+            for attachment in attachments:
+                _type, _encoding = mimetypes.guess_type(url=attachment.filename)
+                email.attach(MIMEApplication(
+                    _data=attachment.data,
+                    _subtype="octet-stream" if _type is None else _type.split("/")[-1],
+                    name=attachment.filename,
+                ))
 
         smtpObj.login(config.SMTP.username, config.SMTP.password)
 
         # Make sure we only get the address and not the name
         receivers = [parseaddr(union.to_email)[1]]
 
-        if cc_emails:
-            receivers.extend([parseaddr(cc_email)[1] for cc_email in cc_emails if cc_email])
+        if merged_cc_emails:
+            receivers.extend([parseaddr(cc_email)[1] for cc_email in merged_cc_emails if cc_email])
 
         if bcc_emails:
             receivers.extend([parseaddr(bcc_email)[1] for bcc_email in bcc_emails if bcc_emails])

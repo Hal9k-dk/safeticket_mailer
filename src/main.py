@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # ex: set tabstop=8 softtabstop=0 expandtab shiftwidth=2 smarttab:
+import importlib.util
 import json
 import re
 import sys
-from datetime import datetime, timedelta, date, timezone
-from io import StringIO
 from csv import DictReader
+from datetime import datetime, timedelta, date, timezone, UTC
+from io import StringIO
 from pathlib import Path
 from pprint import pprint as pp
 from typing import List
@@ -13,12 +14,21 @@ from typing import List
 import yaml
 from tabulate import tabulate
 
-from src.lib.invoice import Invoice, TicketInfo
-from src.lib.misc import args_parser, show_email, send_email, TicketTypesType, create_spreadsheet_ticket_data, MemoryFile
-from src.lib.safeticket_wrapper import SafeTicket
-from config import Config
+from lib.invoice import Invoice, TicketInfo
+from lib.misc import args_parser, show_email, send_email, TicketTypesType, \
+    create_spreadsheet_grouped_by_ticket_type_data, MemoryFile, create_spreadsheet_grouped_by_buyer_data
+from lib.safeticket_wrapper import SafeTicket
 
-CONFIG = Config()
+# Added ./ as a source folder
+sys.path.append(Path(__file__).parent.__str__())
+
+
+# Load config file
+spec = importlib.util.spec_from_file_location("module.config", Path(__file__).parent.parent.joinpath("config.py"))
+_config = importlib.util.module_from_spec(spec)
+sys.modules["module.config"] = _config
+spec.loader.exec_module(_config)
+CONFIG = _config.Config()
 
 
 def main():
@@ -33,7 +43,7 @@ def main():
         print("Something when wrong with login")
         exit(1)
 
-    var_folder_path = Path(__file__).parent.joinpath("var")
+    var_folder_path = Path(__file__).parent.parent.joinpath("var")
     var_event_folder_path = var_folder_path.joinpath(CONFIG.event_name)
     var_event_run_folder_path = var_event_folder_path.joinpath("progress_status")
     var_event_run_folder_path.mkdir(parents=True, exist_ok=True)
@@ -182,8 +192,13 @@ def main():
             ),
             extra_text=union.extra_text)
 
-        memory_file_status = (create_spreadsheet_ticket_data(union=union, ticket_types=ticket_types, config=CONFIG)
-                              if ticket_info_text else None)
+        tickets_grouped_by_type_file = (
+            create_spreadsheet_grouped_by_ticket_type_data(union=union, ticket_types=ticket_types, config=CONFIG)
+            if ticket_info_text else None)
+        tickets_grouped_by_buyer_file = (
+            create_spreadsheet_grouped_by_buyer_data(union=union, ticket_types=ticket_types, config=CONFIG)
+            if ticket_info_text else None)
+
         if args.show_emails or args.debug:
             if not union.ticket_type_names:
                 print("============(Mail - {})============".format(union.name))
@@ -193,7 +208,7 @@ def main():
             else:
                 show_email(msg=msg_status, union=union,
                            subject=union.invoice_subject, cc_emails=[union.cc_email],
-                           attachment=memory_file_status)
+                           attachments=[tickets_grouped_by_type_file, tickets_grouped_by_buyer_file])
 
         if args.send_emails:
             if not union.ticket_type_names:
@@ -202,24 +217,26 @@ def main():
 
             else:
                 if datetime.strptime(event.settle_date, "%d.%m.%Y").date() + timedelta(
-                        days=Config.send_last_status_mail_days_after_event) <= date.today():
+                        days=CONFIG.send_last_status_mail_days_after_event) <= date.today():
 
                     send_last_status_update: List[str] = json.loads(sent_last_status_mail_path.read_text())
                     if union.name in send_last_status_update:
                         print(f'============(The last status email was already sent to {union.name})============')
                     else:
                         send_email(msg=msg_status, union=union, cc_emails=[union.cc_email],
-                                   bcc_emails=[union.cc_email], attachment=memory_file_status,
+                                   bcc_emails=[union.cc_email],
+                                   attachments=[tickets_grouped_by_type_file, tickets_grouped_by_buyer_file],
                                    config=CONFIG, overwrite_email_receiver=args.overwrite_email_receiver)
                         send_last_status_update.append(union.name)
                         sent_last_status_mail_path.write_text(json.dumps(send_last_status_update, indent=4))
                 else:
                     sent_status_update = json.loads(sent_status_mail_path.read_text())
                     send_email(msg=msg_status, union=union, cc_emails=[union.cc_email],
-                               bcc_emails=[], attachment=memory_file_status,
+                               bcc_emails=[],
+                               attachments=[tickets_grouped_by_type_file, tickets_grouped_by_buyer_file],
                                config=CONFIG, overwrite_email_receiver=args.overwrite_email_receiver)
                     sent_status_update.setdefault(union.name, [])
-                    sent_status_update[union.name].append(datetime.utcnow().isoformat())
+                    sent_status_update[union.name].append(datetime.now(UTC).isoformat())
                     sent_status_mail_path.write_text(json.dumps(sent_status_update, indent=4))
 
         if args.send_invoice:
@@ -292,39 +309,48 @@ def main():
                                               data=memory_file_invoice.data)
             show_email(msg=msg_invoice, union=union,
                        subject=union.invoice_subject, cc_emails=[union.cc_email, CONFIG.invoice_cc_email],
-                       attachment=_tmp_memory_file)
+                       attachments=[_tmp_memory_file])
 
         if args.send_invoice:
-            if datetime.strptime(event.settle_date, "%d.%m.%Y").date() + timedelta(
-                    days=Config.send_invoice_mail_days_after_event) <= date.today():
+            settle_date = datetime.strptime(event.settle_date, "%d.%m.%Y").date()
+            if settle_date + timedelta(days=CONFIG.send_invoice_mail_days_after_event) <= date.today():
+                date_there_last_status_mail_is_sent = settle_date + timedelta(
+                    days=CONFIG.send_last_status_mail_days_after_event)
 
-                sent_invoice_mail: List[str] = json.loads(sent_invoice_mail_path.read_text())
-                if union.name in sent_invoice_mail:
-                    print(f'============(The invoice email was already sent to {union.name})============')
+                if union.ticket_type_names and date_there_last_status_mail_is_sent > date.today():
+                    print(f'============(The invoice email cannot be sent to {union.name}, '
+                          f'because the last ticket status email is not sent yet. '
+                          f'The invoice can be sent on the {date_there_last_status_mail_is_sent} or '
+                          f'after that date)============')
+
                 else:
-                    send_email(
-                        msg=msg_invoice,
-                        union=union,
-                        cc_emails=[
-                            union.cc_email,
-                            CONFIG.invoice_cc_email
-                        ],
-                        bcc_emails=[
-                            union.from_email
-                        ],
-                        attachment=memory_file_invoice,
-                        config=CONFIG,
-                        overwrite_email_receiver=args.overwrite_email_receiver,
-                    )
-                    print(f'============(The invoice email was already sent to {union.name})============')
-                    sent_invoice_mail.append(union.name)
-                    sent_invoice_mail_path.write_text(json.dumps(sent_invoice_mail, indent=4))
+                    sent_invoice_mail: List[str] = json.loads(sent_invoice_mail_path.read_text())
+                    if union.name in sent_invoice_mail:
+                        print(f'============(The invoice email was already sent to {union.name})============')
+                    else:
+                        send_email(
+                            msg=msg_invoice,
+                            union=union,
+                            cc_emails=[
+                                union.cc_email,
+                                CONFIG.invoice_cc_email
+                            ],
+                            bcc_emails=[
+                                union.from_email
+                            ],
+                            attachments=[memory_file_invoice],
+                            config=CONFIG,
+                            overwrite_email_receiver=args.overwrite_email_receiver,
+                        )
+                        print(f'============(The invoice email was already sent to {union.name})============')
+                        sent_invoice_mail.append(union.name)
+                        sent_invoice_mail_path.write_text(json.dumps(sent_invoice_mail, indent=4))
 
             else:
-                data_there_invoices_can_be_sent = datetime.strptime(event.settle_date, "%d.%m.%Y").date() + timedelta(
-                    days=Config.send_invoice_mail_days_after_event)
+                date_there_invoices_can_be_sent = settle_date + timedelta(
+                    days=CONFIG.send_invoice_mail_days_after_event)
                 print(f'============(The invoice email was not sent to {union.name}, '
-                      f'because it is not the {data_there_invoices_can_be_sent} or after that date)============')
+                      f'because it is not the {date_there_invoices_can_be_sent} or after that date)============')
 
 
 if __name__ == '__main__':

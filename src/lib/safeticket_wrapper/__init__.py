@@ -4,7 +4,9 @@ import pickle
 import unittest
 from datetime import datetime, timedelta
 from pathlib import Path
+from time import time
 from typing import Dict, Any, List
+from urllib.parse import urljoin
 
 import requests
 import atexit
@@ -102,17 +104,34 @@ class LoginError(BaseException):
         self.errors = 403
 
 
+class Client(requests.Session):
+    def __init__(self, organization: str, *args, **kwargs):
+        # noinspection PyArgumentList
+        super(Client, self).__init__(*args, **kwargs)
+
+        self.prefix_url = f"https://{organization}.safeticket.dk"
+
+    def request(self, method, url, *args, **kwargs):
+        url = urljoin(self.prefix_url, url)
+
+        start_time = time()
+        resp = super(Client, self).request(
+            method, url, *args, timeout=5, **kwargs
+        )
+        print("[DEBUG] Response time: {:.2f} secs".format(time() - start_time))
+
+        return resp
+
+
 class SafeTicket:
-    _organization = None
     _username = None
     _password = None
     _session = None
 
     def __init__(self, organization: str, username: str, password: str):
-        self._organization = organization
         self._username = username
         self._password = password
-        self._session = requests.Session()
+        self._session = Client(organization)
         atexit.register(self._cleanup)
 
     def _cleanup(self):
@@ -130,16 +149,18 @@ class SafeTicket:
 
         else:
             req = self._session.post(
-                url='https://{}.safeticket.dk/admin/login'.format(self._organization),
+                url='/admin/login',
                 data={
                     'conturl': '/admin/',
                     'email': self._username,
                     'password': self._password
-                })
+                },
+                allow_redirects=False,
+            )
 
         # The page always return 200, but if there is a redirect (302) in the history
         # the login was a success, if not it failed
-        if req.status_code == 200 and req.history and req.history[0].status_code == 302:
+        if req.status_code == 302:
             cookie_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
             with open(cookie_path, "wb") as f:
                 pickle.dump(self._session.cookies, f)
@@ -150,7 +171,7 @@ class SafeTicket:
 
     def get_events(self, past: bool = False) -> EventsResult:
         req = self._session.get(
-            url='https://{}.safeticket.dk/admin/api/event'.format(self._organization),
+            url='/admin/api/event',
             params={
                 'operation': 'list',
                 'view': 'financial',
@@ -165,7 +186,7 @@ class SafeTicket:
 
     def get_event_tickets(self, event_id: int) -> TicketsResult:
         req = self._session.get(
-            url='https://{}.safeticket.dk/admin/api/financial'.format(self._organization),
+            url='/admin/api/financial',
             data={
                 'operation': 'eventexport',
                 'id': event_id
@@ -191,7 +212,7 @@ class SafeTicket:
             _data['ticket{}'.format(ticket_id)] = 1
 
         req = self._session.post(
-            url='https://{}.safeticket.dk/admin/eventexportcsv'.format(self._organization),
+            url='/admin/eventexportcsv',
             data=_data)
 
         if req.status_code == 403:
