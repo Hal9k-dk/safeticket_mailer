@@ -19,7 +19,7 @@ TEMPLATE_CONTENT = CURRENT_DIR.joinpath("template.html").read_text()
 BIN_HTML_TO_PDF = "wkhtmltopdf"
 if shutil.which(BIN_HTML_TO_PDF) is None:
     print(f"The program `{BIN_HTML_TO_PDF}` localed in the paths from the environment variable PATH "
-          f"(os.environ.get('PATH')). You can install `{BIN_HTML_TO_PDF}` with: pikaur -Sy --noconfirm wkhtmltopdf")
+          f"({os.environ.get('PATH')}). You can install `{BIN_HTML_TO_PDF}` with: pikaur -Sy --noconfirm wkhtmltopdf")
     sys.exit(1)
 
 
@@ -114,11 +114,11 @@ class Invoice:
                 price_formatted=locale.format_string('%.2f', sum_of_tickets, grouping=True),
             ))
 
+        pdf_output_file.parent.mkdir(mode=0o700, exist_ok=True)
         twemoji_js_file_path = pdf_output_file.parent.joinpath("twemoji.js")
         twemoji_js_content = TWEMOJI_JS_FILE_PATH.read_text().replace(
             "%%%TWEMOJI_JS_CONTENT%%%", TWEMOJI_JS_FILE_PATH.parent.__str__())
-        with open(twemoji_js_file_path, "w") as f:
-            f.write(twemoji_js_content)
+        twemoji_js_file_path.write_text(twemoji_js_content)
 
         html_text = self._template.render(
             date=dt.date().__str__(),
@@ -160,7 +160,7 @@ class Invoice:
             exit_code = pid.wait()
 
             if exit_code == 0:
-                print(f"Created the pdf: {pdf_output_file}")
+                print(f"============(Created the pdf: {pdf_output_file})============")
             else:
                 print(f"Failed at creating the pdf: {pdf_output_file}")
                 print(f"STDOUT:\n{stdout}\n")
