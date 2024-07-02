@@ -13,9 +13,9 @@ from typing import List
 import yaml
 from tabulate import tabulate
 
-from lib.invoice import Invoice, TicketInfo
-from lib.misc import args_parser, show_email, send_email, TicketTypesType, create_spreadsheet_ticket_data, MemoryFile
-from lib.safeticket_wrapper import SafeTicket
+from src.lib.invoice import Invoice, TicketInfo
+from src.lib.misc import args_parser, show_email, send_email, TicketTypesType, create_spreadsheet_ticket_data, MemoryFile
+from src.lib.safeticket_wrapper import SafeTicket
 from config import Config
 
 CONFIG = Config()

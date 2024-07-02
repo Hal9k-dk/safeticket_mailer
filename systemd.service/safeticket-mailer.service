@@ -6,7 +6,7 @@ WorkingDirectory=%h/safeticket_mailer
 
 Type=oneshot
 #ExecStart=/usr/bin/env true
-ExecStart=/usr/bin/env python3 main.py --auto-include-past --use-manual-ticket --show-emails --send-emails --send-invoice
+ExecStart=/usr/bin/env python3 src/main.py --auto-include-past --use-manual-ticket --show-emails --send-emails --send-invoice
 
 [Install]
 WantedBy=default.target

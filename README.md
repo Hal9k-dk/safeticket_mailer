@@ -46,7 +46,7 @@ bin/install_symbolic_links_to_services.sh
 Copy the `config.example.py` to `config.py` and change the variables in the file.
 There are a lot of comment/description for all the variables in the config-file that it shouldn't be a problem mail it work.
 
-Check out the [config.example.py](config.example.py) file.
+Check out the [config.example.py](config_example.py) file.
 
 # Start the systemd tiemr (scheduler for the service)
 Check the `systemd.service/safeticket-mailer.timer` to figure out when it is running
@@ -55,4 +55,4 @@ systemctl --user enable --now safeticket-mailer.timer
 ```
 
 # A small library have been written to interact with Safeticket
-[safeticket_wrapper](lib/safeticket_wrapper)
+[safeticket_wrapper](src/lib/safeticket_wrapper)
