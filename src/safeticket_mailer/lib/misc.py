@@ -5,13 +5,13 @@ import smtplib
 import ssl
 import sys
 import io
+from pathlib import Path
 from email.header import Header
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import parseaddr
 from typing import List, Dict, Any, NamedTuple
-
 
 try:
     from odf import opendocument
@@ -22,6 +22,9 @@ except ModuleNotFoundError:
     sys.exit(1)
 
 
+from .config import __file__ as config_example_file
+
+
 TicketTypesType = Dict[str, List[Dict[str, Any]]]
 
 
@@ -29,6 +32,13 @@ def args_parser():
     parser = argparse.ArgumentParser(description='SafeTicket Mailer')
     parser.add_argument('--debug', dest='debug', action='store_true',
                         default=False, help='Print a lot of info')
+
+    parser.add_argument('--config-file', '--config', dest='config_file', type=Path, required=True,
+                        help="Path to the config.py file, which is based on the example file: {}".format(
+                            Path(config_example_file).parent.joinpath("config_example.py")
+                        ))
+    parser.add_argument('--data-folder', dest='data_folder', type=Path, required=True,
+                        help="The data folder. Tracking of which emails have been sendt is stored here.")
 
     parser.add_argument('--events', dest='events', action='store_true',
                         default=False, help='Print all events')

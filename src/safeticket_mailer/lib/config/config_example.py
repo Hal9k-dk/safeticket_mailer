@@ -1,4 +1,5 @@
 # ex: set tabstop=8 softtabstop=0 expandtab shiftwidth=2 smarttab:
+from os import environ
 from typing import Optional, List
 
 
@@ -74,15 +75,15 @@ class Union:
 class Config:
     # Login info for Safeticket.dk
     organization = 'example'  # EXAMPLE.safeticket.dk
-    username = 'someone'  # Normally, this is an email address
-    password = 'secret'
+    username = environ["SAFETICKET_USERNAME"]  # Normally, this is an email address
+    password = environ["SAFETICKET_PASSWORD"]
 
     # SMTP (mail) server config (currently, only SSL is supported)
     class SMTP:
         host = 'example.com'
         port = 587  # '25, 465, 587'
-        username = 'someone'
-        password = 'secret'
+        username = environ["SMTP_PASSWORD"]
+        password = environ["SMTP_PASSWORD"]
 
     # This variable tells the SafeTicket mailer to send the last status mail X amount of
     # days after the event, this is based on the 'settledate' information.

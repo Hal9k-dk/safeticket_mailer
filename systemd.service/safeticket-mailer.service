@@ -2,11 +2,11 @@
 Description=Send mails with ticket sales from SafeTicket
 
 [Service]
-WorkingDirectory=%h/safeticket_mailer
+WorkingDirectory=%h/safeticket_mailer/src
 
 Type=oneshot
 #ExecStart=/usr/bin/env true
-ExecStart=/usr/bin/env python3 src/main.py --auto-include-past --use-manual-ticket --show-emails --send-emails --send-invoice
+ExecStart=/usr/bin/env python3 -m safeticket_mailer --auto-include-past --use-manual-ticket --show-emails --send-emails --send-invoice
 
 [Install]
 WantedBy=default.target

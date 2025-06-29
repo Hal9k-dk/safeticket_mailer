@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # ex: set tabstop=8 softtabstop=0 expandtab shiftwidth=2 smarttab:
-import importlib.util
 import json
 import re
 import sys
@@ -14,25 +13,17 @@ from typing import List
 import yaml
 from tabulate import tabulate
 
+from .lib.config import get_config
 from .lib.invoice import Invoice, TicketInfo
 from .lib.misc import args_parser, show_email, send_email, TicketTypesType, \
     create_spreadsheet_grouped_by_ticket_type_data, MemoryFile, create_spreadsheet_grouped_by_buyer_data
 from .lib.safeticket_wrapper import SafeTicket
 
-# Added ./ as a source folder
-# sys.path.append(Path(__file__).parent.__str__())
-
-
-# Load config file
-spec = importlib.util.spec_from_file_location("module.config", Path(__file__).parent.parent.joinpath("config.py"))
-_config = importlib.util.module_from_spec(spec)
-sys.modules["module.config"] = _config
-spec.loader.exec_module(_config)
-CONFIG = _config.Config()
-
 
 def main():
     args = args_parser()
+
+    CONFIG = get_config(args.config_file)
 
     safe_ticket = SafeTicket(
         CONFIG.organization,
@@ -40,10 +31,10 @@ def main():
         CONFIG.password)
 
     if safe_ticket.login() is False:
-        print("Something when wrong with login")
+        print("Something when wrong with login to SafeTicket")
         exit(1)
 
-    var_folder_path = Path(__file__).parent.parent.joinpath("var")
+    var_folder_path = Path(args.data_folder)
     var_event_folder_path = var_folder_path.joinpath(CONFIG.event_name)
     var_event_run_folder_path = var_event_folder_path.joinpath("progress_status")
     var_event_run_folder_path.mkdir(parents=True, exist_ok=True)
