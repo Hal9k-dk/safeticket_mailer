@@ -14,13 +14,13 @@ from typing import List
 import yaml
 from tabulate import tabulate
 
-from lib.invoice import Invoice, TicketInfo
-from lib.misc import args_parser, show_email, send_email, TicketTypesType, \
+from .lib.invoice import Invoice, TicketInfo
+from .lib.misc import args_parser, show_email, send_email, TicketTypesType, \
     create_spreadsheet_grouped_by_ticket_type_data, MemoryFile, create_spreadsheet_grouped_by_buyer_data
-from lib.safeticket_wrapper import SafeTicket
+from .lib.safeticket_wrapper import SafeTicket
 
 # Added ./ as a source folder
-sys.path.append(Path(__file__).parent.__str__())
+# sys.path.append(Path(__file__).parent.__str__())
 
 
 # Load config file

@@ -1,5 +1,0 @@
-requests
-tabulate
-
-Jinja2
-PyYAML

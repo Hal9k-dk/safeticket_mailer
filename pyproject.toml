@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "safeticket_mailer"
+version = "0.1.0"
+readme = "README.md"
+requires-python = ">=3.10"
+# description = ""
+authors = [{name = "Dennis Vestergaard Værum", email = "github@varum.dk"}]
+# readme = "README.md"
+# license = "BSD"
+# packages = [
+#   {include = "safeticket_mailer", from="src"}
+# ]
+
+[project.scripts]
+safeticket-mailer = "safeticket_mailer.__init__:main"
+
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"*" = ["*.html", "*.js", "*.png"]
+
+# "safeticket_mailer.lib.invoice" = ["*.html", "*.js", "*.png"]
+# "safeticket_mailer.lib.invoice.twemoji" = ["*.html", "*.js", "*.png"]
+# "safeticket_mailer.lib.invoice.twemoji.72x72" = ["*.html", "*.js", "*.png"]
+
+[dependencies]
+python = ">= 3.10"
+
+pyyaml = ">= 5.2"
+tabulate = ">= 0.9.0"
+jinja2 = ">= 3.1.0"
+urllib3 = ">= 2.2.0"
+odfpy = ">= 1.4.1"
+requests = ">= 2.28.0"
