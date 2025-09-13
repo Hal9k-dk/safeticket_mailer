@@ -36,4 +36,8 @@ buildPythonPackage rec {
     setuptools
     wheel
   ];
+
+  meta = {
+    mainProgram = "safeticket-mailer";
+  };
 }
